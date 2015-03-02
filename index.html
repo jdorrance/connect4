@@ -81,8 +81,7 @@
 		};
 		var clickHandler = function(event) {
 			event.preventDefault();
-			var colIndex = $(this).prop('class').split(' ')[1].split('-').reverse()[0];
-			colIndex = parseInt(colIndex, 10);
+			var colIndex = $(this).data('col');
 			dropCircle(colIndex);
 		};
 		_(tableSize[1]).times(function(rowIndex) {
