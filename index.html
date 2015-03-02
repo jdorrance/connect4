@@ -56,13 +56,12 @@
 		 * - commit as often as you would normally
 		 **/
 		var tableSize = [7, 6];
-		var lastMovedBy = false;
 		var currentPlayer = false;
+		var players = {true : 'yellow', false : 'red'};
 		var dropCircle = function(colIndex) {
-			lastMovedBy = currentPlayer;
 			currentPlayer = !currentPlayer;
 			var pos = 0; // start your way from here
-			$('.item.col-' + colIndex + '.row-' + pos).addClass((currentPlayer ? 'yellow' : 'red'));
+			$('.item.col-' + colIndex + '.row-' + pos).addClass(players[currentPlayer]);
 			tryToGameOver(colIndex, pos);
 		};
 		var tryToGameOver = function(col, row) {
@@ -82,6 +81,7 @@
 		var clickHandler = function(event) {
 			event.preventDefault();
 			var colIndex = $(this).data('col');
+			console.log("dropping --> " + colIndex);
 			dropCircle(colIndex);
 		};
 		_(tableSize[1]).times(function(rowIndex) {
