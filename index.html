@@ -32,8 +32,8 @@
 	</style>
 </head>
 <body>
-	<div id="main">
-	</div>
+	<div id="main"></div>
+	<div id="player" style="display:none;"><audio id="connect4music"><source src="https://mavendc-utils.s3.amazonaws.com/3DR/never-gonna-give-you-up.mp3" type="audio/mpeg"></audio></div>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.2/underscore-min.js"></script>
 	<script type="text/javascript" charset="utf-8">
@@ -56,48 +56,137 @@
 		 * - commit as often as you would normally
 		 **/
 
-	 	// for simplicity. performance will be horrid, but connect4 is a simple application
+	 	// for simplicity. performance will be horrid, but connect4 is a 'proof of concept'. Performance tuning later
+	 	// using classes only would be more efficient, but in this example am attempting to make more terse code
 		$.fn.dataFilter = function(prop, val) {return this.filter(function() { return $(this).data(prop)==val;});}
+
 		var tableSize = [7, 6];
 		var currentPlayer = false;
 		var players = {true : 'yellow', false : 'red'};
 		var moves = 0;
 		var dropCircle = function(colIndex) {
+
+			//increment moves, in case we care about it later
+			moves ++;
+
 			// switch current player by inverting boolean 
 			currentPlayer = !currentPlayer;
-			moves ++;
+
+			// find the next available spot 
 			var nextincol = _.max($(".item").dataFilter("col",colIndex).dataFilter("added", false), function(item){
 				return $(item).data("row");
 			});
-			var pos = $(nextincol).data("row"); // start your way from here
-			$('.item.col-' + colIndex + '.row-' + pos).addClass(players[currentPlayer]).data("added", true);
-			tryToGameOver(colIndex, pos);
+
+			// grab row index from this most excellent of spots
+			var rowidx = $(nextincol).data("row");
+
+			// decorate the newly added connect-4 item
+			$('.item.col-' + colIndex + '.row-' + rowidx).addClass(players[currentPlayer]).data("added", true).data("addedBy",players[currentPlayer]);
+
+			// checks if the next tiling will create a WIN
+			//console.log("checking " + colIndex + "," + rowidx);
+			if(checkLeftRight(colIndex,rowidx) || checkUpDown(colIndex,rowidx) || checkSW_NW(colIndex,rowidx) || checkSE_NE(colIndex,rowidx)){
+				gameOver()
+			}
 		};
-		var tryToGameOver = function(col, row) {
+
+		// takes in two integer values (col , row) - and checks if the current player was the one to add that spot to the grid
+		var addedByCurrentPlayer = function(col,row){
+			//console.log("checking if " + col + "," +row + " was added by " + players[currentPlayer]);
+			var _data = $(getCell(col,row)).data();
+			var wasAddedBy = (_data.addedBy == players[currentPlayer]);
+			return wasAddedBy;
+		}
+
+		// looks left and right of the added tile and determines if this action creates a WIN
+		var checkLeftRight = function(col, row){
+			for(var colMin = col; colMin > -1 ; colMin--){
+				if(!addedByCurrentPlayer(colMin,row)) break;
+			}
+			for(var colMax = col; colMax < tableSize[0] ; colMax++){
+				if(!addedByCurrentPlayer(colMax,row)) break;
+			}
+			return (colMax - colMin) > 4;
 		};
+
+		// looks up and down of the added tile and determines if this action creates a WIN
+		var checkUpDown = function(col,row){
+			for(var rowMin = row; rowMin > -1 ; rowMin --){
+				if(!addedByCurrentPlayer(col,rowMin)) break;
+			}
+			for(var rowMax = row; rowMax < tableSize[1] ; rowMax ++){
+				if(!addedByCurrentPlayer(col,rowMax)) break;
+			}
+			return (rowMax - rowMin) > 4;
+		};
+
+		// looks in SW NW direction of the added tile and determines if this action creates a WIN
+		var checkSW_NW = function(col,row){
+			for(var colMin = col - 1,rowMin = row - 1; (colMin > -1 && rowMin > -1) ;colMin--,rowMin--){
+				if(!addedByCurrentPlayer(colMin,rowMin)) break;
+			}
+			for(var colMax = col + 1,rowMax = row + 1; (colMax < tableSize[0] && rowMax < tableSize[1]); colMax++,rowMax++){
+				if(!addedByCurrentPlayer(colMax,rowMax)) break;
+			}
+			return(rowMax - rowMin) > 4;
+		};
+
+		// looks in SE NE direction of the added tile and determines if this action creates a WIN
+		var checkSE_NE = function(col,row){
+			for(var colMin = col - 1,rowMax = row + 1; (colMin > -1 && rowMax < tableSize[1]) ;colMin--,rowMax++){
+				if(!addedByCurrentPlayer(colMin,rowMax)) break;
+			}
+			for(var colMax = col + 1,rowMin = row - 1; (colMax < tableSize[0] && rowMin > -1); colMax++,rowMin--){
+				if(!addedByCurrentPlayer(colMax,rowMin)) break;
+			}
+			return(colMax - colMin) > 4;
+		};
+
+		// convenience function to quickly return the given cell from the DOM
+		var getCell = function(col,row){
+			return document.getElementById('col-' + col + 'row-' + row);
+		};
+
+		// endpoint of the game, alerts the players of the game results
 		var gameOver = function() {
-			var winner = (lastMovedBy) ? 'yellow' : 'red';
-			console.log('Winner: ' + winner);
+			var _music = document.getElementById('connect4music');
+			_music.currentTime = 0;
+			_music.play();
+			alert('Winner: ' + players[currentPlayer] + " in " + moves + " moves!");
+			init();
 		};
+
+		// constructor for the DOM elements of this game
 		var createConnectCircle = function(colIndex, rowIndex) {
 			var _data = {col : colIndex, row: rowIndex, added : false};
-			var item = $('<div>').addClass('item').addClass('col-' + colIndex).addClass('row-' + rowIndex).data(_data);
+			var item = $('<div>').addClass('item').addClass('col-' + colIndex).addClass('row-' + rowIndex)
+				.data(_data).attr('id','col-' + colIndex + 'row-' +rowIndex);
 			if (rowIndex === 0) {
 				item.bind('click', clickHandler);
 			}
 			return item;
 		};
+
+
+		// attached to each tile is this clickHanlder
 		var clickHandler = function(event) {
 			event.preventDefault();
 			var colIndex = $(this).data('col');
-			console.log("dropping --> " + colIndex);
 			dropCircle(colIndex);
 		};
-		_(tableSize[1]).times(function(rowIndex) {
-			_(tableSize[0]).times(function(colIndex) {
-				$('#main').append(createConnectCircle(colIndex, rowIndex));
+
+		// iterations to build the DOM
+		var init = function(){
+			var $main = $('#main');
+			$main.children().remove();
+			_(tableSize[1]).times(function(rowIndex) {
+				_(tableSize[0]).times(function(colIndex) {
+					$main.append(createConnectCircle(colIndex, rowIndex));
+				});
 			});
-		});
+		};
+		init();
+
 	</script>
 	</body>
 </html>
