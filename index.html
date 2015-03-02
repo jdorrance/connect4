@@ -63,11 +63,7 @@
 		var tableSize = [7, 6];
 		var currentPlayer = false;
 		var players = {true : 'yellow', false : 'red'};
-		var moves = 0;
 		var dropCircle = function(colIndex) {
-
-			//increment moves, in case we care about it later
-			moves ++;
 
 			// switch current player by inverting boolean 
 			currentPlayer = !currentPlayer;
@@ -152,7 +148,7 @@
 			var _music = document.getElementById('connect4music');
 			_music.currentTime = 0;
 			_music.play();
-			alert('Winner: ' + players[currentPlayer] + " in " + moves + " moves!");
+			alert('Winner: ' + players[currentPlayer]);
 			init();
 		};
 
