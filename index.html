@@ -72,7 +72,8 @@
 			console.log('Winner: ' + winner);
 		};
 		var createConnectCircle = function(colIndex, rowIndex) {
-			var item = $('<div>').addClass('item').addClass('col-' + colIndex).addClass('row-' + rowIndex);
+			var _data = {col : colIndex, row: rowIndex, clicked : false};
+			var item = $('<div>').addClass('item').addClass('col-' + colIndex).addClass('row-' + rowIndex).data(_data);
 			if (rowIndex === 0) {
 				item.bind('click', clickHandler);
 			}
