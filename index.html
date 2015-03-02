@@ -55,13 +55,22 @@
 		 * - you can optimize or replace existing code
 		 * - commit as often as you would normally
 		 **/
+
+	 	// for simplicity. performance will be horrid, but connect4 is a simple application
+		$.fn.dataFilter = function(prop, val) {return this.filter(function() { return $(this).data(prop)==val;});}
 		var tableSize = [7, 6];
 		var currentPlayer = false;
 		var players = {true : 'yellow', false : 'red'};
+		var moves = 0;
 		var dropCircle = function(colIndex) {
+			// switch current player by inverting boolean 
 			currentPlayer = !currentPlayer;
-			var pos = 0; // start your way from here
-			$('.item.col-' + colIndex + '.row-' + pos).addClass(players[currentPlayer]);
+			moves ++;
+			var nextincol = _.max($(".item").dataFilter("col",colIndex).dataFilter("added", false), function(item){
+				return $(item).data("row");
+			});
+			var pos = $(nextincol).data("row"); // start your way from here
+			$('.item.col-' + colIndex + '.row-' + pos).addClass(players[currentPlayer]).data("added", true);
 			tryToGameOver(colIndex, pos);
 		};
 		var tryToGameOver = function(col, row) {
@@ -71,7 +80,7 @@
 			console.log('Winner: ' + winner);
 		};
 		var createConnectCircle = function(colIndex, rowIndex) {
-			var _data = {col : colIndex, row: rowIndex, clicked : false};
+			var _data = {col : colIndex, row: rowIndex, added : false};
 			var item = $('<div>').addClass('item').addClass('col-' + colIndex).addClass('row-' + rowIndex).data(_data);
 			if (rowIndex === 0) {
 				item.bind('click', clickHandler);
